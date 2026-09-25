@@ -63,7 +63,7 @@ export default function Ulasan() {
               {renderStars(review.rating)}
             </div>
             <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
-              "{review.text}"
+              &ldquo;{review.text}&rdquo;
             </p>
             <button className="text-blue-500 text-sm font-semibold mt-auto self-start hover:underline">
               Selengkapnya

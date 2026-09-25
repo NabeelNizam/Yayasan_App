@@ -16,7 +16,7 @@ export default function Quote() {
           />
 
           <blockquote className="mb-4 text-xl font-medium italic leading-relaxed text-gray-800">
-            "{quote.quote}"
+            &ldquo;{quote.quote}&rdquo;
           </blockquote>
 
           <p className="mb-2 text-sm text-gray-600">
