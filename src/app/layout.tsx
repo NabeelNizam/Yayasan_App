@@ -1,7 +1,8 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
-import Navbar from '../components/navbar'
-import Footer from '../components/footer'
+import { Navbar, Footer } from '../components/layout'
+import LenisProvider from '../providers/lenis-provider'
+import AnimationProvider from '../providers/animation-provider'
 
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config, library } from '@fortawesome/fontawesome-svg-core'
@@ -29,11 +30,15 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className={inter.className}>
-        <Navbar />
-        <main className="flex-1 pt-16">
-          {children}
-        </main>
-        <Footer />
+        <LenisProvider>
+          <AnimationProvider>
+            <Navbar />
+            <main className="flex-1 pt-16">
+              {children}
+            </main>
+            <Footer />
+          </AnimationProvider>
+        </LenisProvider>
       </body>
     </html>
   )

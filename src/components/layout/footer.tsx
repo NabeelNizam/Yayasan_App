@@ -12,10 +12,19 @@ import {
     faYoutube,
 } from '@fortawesome/free-brands-svg-icons'
 
+import { usePathname } from "next/navigation"
+
 export default function Footer() {
+    const pathname = usePathname()
+    const disabledPaths = ["/404", "/kegiatan/tk", "/kegiatan/takmir"]
+
+    if (disabledPaths.includes(pathname)) {
+        return null
+    }
+
     return (
         <footer className="bg-[#003414] w-full py-10 px-6 mt-24 cursor-default relative z-50">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 justify-items-center text-sm">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 text-sm">
 
                 <div>
                     <p className="font-bold text-[#FFD700] mb-3">

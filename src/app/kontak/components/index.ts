@@ -1,0 +1,7 @@
+export { default as Hero } from './hero'
+export { default as ContactInfoSection } from './contact-info'
+export { default as SocialMediaSection } from './social-media'
+export { default as LocationMapSection } from './location-map'
+export { default as FeedbackForm } from './feedback-form'
+export * from './data'
+export * from './types'

@@ -1,9 +1,12 @@
-"use client"
+import { Hero, Disclaimer, Quote, DonationGrid, donationCampaignsData } from './components'
 
-export default function Donasi() {
+export default function DonasiPage() {
   return (
-    <section>
-      <h1 className="text-3xl text-black">HALAMAN DONASI</h1>
-    </section>
+    <div className="min-h-screen pb-16">
+      <Hero />
+      <Disclaimer />
+      <Quote />
+      <DonationGrid campaigns={donationCampaignsData} />
+    </div>
   )
 }
