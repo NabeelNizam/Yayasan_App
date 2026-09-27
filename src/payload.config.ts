@@ -8,6 +8,7 @@ import { Lembaga } from './collections/Lembaga'
 import { Prestasi } from './collections/Prestasi'
 import { Fasilitas } from './collections/Fasilitas'
 import { Publikasi } from './collections/Publikasi'
+import { Kajian } from './collections/Kajian'
 
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || 'CHANGE_ME',
@@ -20,5 +21,5 @@ export default buildConfig({
     push: process.env.NODE_ENV !== 'production',
     migrationDir: './src/migrations',
   }),
-  collections: [Users, Media, Lembaga, Prestasi, Fasilitas, Publikasi],
+  collections: [Users, Media, Lembaga, Prestasi, Fasilitas, Publikasi, Kajian],
 })
