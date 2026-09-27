@@ -14,6 +14,8 @@ import { SyncRun } from './collections/SyncRun'
 import { Campaign } from './collections/Campaign'
 import { Donor } from './collections/Donor'
 import { Prayer } from './collections/Prayer'
+import { ContactMessage } from './collections/ContactMessage'
+import { SiteSettings } from './globals/SiteSettings'
 
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || 'CHANGE_ME',
@@ -39,5 +41,7 @@ export default buildConfig({
     Campaign,
     Donor,
     Prayer,
+    ContactMessage,
   ],
+  globals: [SiteSettings],
 })
