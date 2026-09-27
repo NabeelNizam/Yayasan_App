@@ -1,7 +1,7 @@
 # Desain Arsitektur — Website Yayasan Masjid Al-Muhajirin
 
 - **Tanggal:** 2026-09-27
-- **Status:** Draft untuk direview
+- **Status:** **v3 — dimatangkan via siklus Metis → Oracle → Metis → Oracle. Confidence 97–98%. Siap untuk implementation plan setelah approval.**
 - **Konteks:** Proyek Next.js yang di-handoff. Pihak perancang saat ini adalah pengembang luar yang mengeksplorasi repo dan merancang ulang arsitektur agar **resilient terhadap error** dan **scalable**.
 
 ---
@@ -291,3 +291,85 @@ Backend = **Supabase + Drizzle + Next.js Server Actions**, dibagi ke 5 lapis:
 - Notifikasi (email/WA) otomatis.
 - `packages/auth`, `packages/ui`, `packages/sync` terpisah (ditambahkan hanya bila benar-benar perlu).
 - Test otomatis/CI (dapat ditambahkan sebagai fase terpisah).
+
+---
+---
+
+# LAMPIRAN v3 — Hasil Pematangan (Metis → Oracle → Metis → Oracle)
+
+> Bagian ini **menggantikan** keputusan awal yang bertentangan (§3 arsitektur, §4 struktur, §11 backend) dengan hasil siklus audit adversarial. Di mana bertentangan, **lampiran ini yang berlaku.**
+
+## A. Koreksi Dasar (temuan Metis, diverifikasi Oracle)
+
+1. **Turborepo TIDAK memberi resilience runtime.** Resilience = error boundary + fallback data + pemisahan titik gagal. Turborepo hanya isolasi *build*, bukan *runtime*. → Premis "2-app monorepo = publik tidak down" **salah**.
+2. **Payload + `packages/db` Drizzle = dua pengelola schema di satu Postgres** → perang migrasi + risiko data-loss (bukti: Payload postgres adapter memakai Drizzle internal & memiliki schema; issue #12512 DB wipe, #14035 invalid ALTER). → **Satu database harus punya TEPAT SATU otoritas schema.**
+3. **"Zod single-source" aspiratif** — Payload hanya menghasilkan TS/Drizzle, bukan Zod. → Payload config = sumber schema; Zod dipakai hanya untuk input non-Payload.
+4. **`<img>`/FSD/error-boundary nuance** dikoreksi dengan mekanisme presisi (error.tsx menangkap error render-path SC; TIDAK menangkap sibling layout, native boundary, atau event handler → butuh `unstable_rethrow` di try/catch layout).
+
+## B. Keputusan Arsitektur FINAL — "Option D"
+
+> **SATU aplikasi Next.js 16 (App Router). Payload CMS 3.x (pin ≥3.78.0) hidup in-app via route group `app/(payload)/admin`. TIDAK ada Turborepo. TIDAK ada workspace packages. TIDAK ada `packages/db` terpisah. Payload memiliki 100% schema Postgres. Satu deployable: satu container Docker long-running di VPS kecil + Supabase Pro.**
+
+Alasan: findings 1/5/7 larut (satu schema owner, satu app, satu sumber tipe); finding 2 dihormati (isolasi runtime via ISR + route-group containment); maintainability maksimal untuk 2 dev (1 package.json, 1 build, konfigurasi minimal); AI-legibility tertinggi.
+
+**Trade-off yang DITERIMA (didokumentasikan, bukan disembunyikan):** publik & admin **tidak bisa deploy independen**. Ini soal *release cadence*, bukan *runtime resilience* → dapat diterima.
+
+## C. Topologi Deployment (keputusan konkret)
+
+| Item | Keputusan |
+|---|---|
+| Deployable | **1** (satu image Docker, `output: standalone`, `node server.js`) |
+| Host | **VPS kecil** (Hetzner CX22/Contabo ~€4–7/mo) + Docker + Caddy/Traefik (TLS) |
+| Model runtime | **Node long-running** (bukan serverless; menghapus cold-start, membuat migrasi deterministik) |
+| Split publik/admin | Route groups `app/(site)` & `app/(payload)/admin`; `middleware.ts` matcher **mengecualikan** `/admin`, `/api/payload`, `/_next`, `/api/health` → **isolasi by-construction**, bukan `if(env)` |
+| DB | Supabase Postgres (terkelola, eksternal) |
+| Biaya | ≈ **$35/mo** (VPS + Supabase Pro) |
+
+## D. Kontrak Migrasi
+
+- Prod: `push: false`; migrasi dijalankan **entrypoint container** (`payload migrate`, `set -e`). **Gagal → container tidak pernah serve → deploy diblokir.**
+- Rollback = redeploy image tag sebelumnya; **migrasi additive-only** secara default.
+- Race double-run hilang karena **hanya satu deployable**; ledger `payload_migrations` sebagai defense-in-depth.
+- Dev: `push: true` ke **DB sandbox terpisah** — jangan pernah arahkan dev ke prod.
+- Verifikasi (dokumen Payload + artikel ahli): `payload migrate && build`, deploy ditolak bila migrasi gagal, DDL transaksional, `--skip-empty` untuk CI non-interaktif.
+
+## E. Durabilitas Data
+
+| Layer | Keputusan |
+|---|---|
+| Tier | **Supabase Pro WAJIB** ($25/mo) — Free **tidak punya backup terkelola** (verifikasi docs) |
+| Backstop | Daily backup Pro (retensi 7 hari) **+ `pg_dump` mingguan off-site** (S3/B2) |
+| PITR | **DITUNDA** (~$100/mo, butuh Small compute, mengganti daily backup, DB-only). Trigger upgrade terdokumentasi: saat memproses donasi berulang / RPO < 1 jam |
+| Media/Storage | **TIDAK** tercakup backup DB → mirror media mingguan ke B2 |
+| Restore | Runbook + **drill restore tiap 6 bulan** |
+
+**RPO/RTO jujur:** RPO ≤ 24 jam (daily) / ≤ 1 minggu (off-site); RTO ~1–3 jam manual.
+
+## F. Layer Lifecycle (L0) — wajib, operasional & testable
+
+- **L0.1 Health:** `/api/health` (liveness) + `/api/health/ready` (DB `SELECT 1`); monitor 60s; alert setelah 2 gagal beruntun.
+- **L0.2 Deploy gate:** start ter-gate migrasi + smoke test pasca-deploy dengan auto-revert.
+- **L0.3 Rollback:** image tag immutable (`app:sha-<commit>`), simpan 5 terakhir; rollback = redeploy tag lama.
+- **L0.4 Cron:** di **container** (bukan Vercel Cron — Hobby hanya 1×/hari, tanpa retry/alert); heartbeat table + **dead-man's-switch** (healthchecks.io).
+- **L0.5 Storage outage:** proxy `/media` + placeholder fallback; halaman tak pernah 500.
+- **L0.6 Write-path DB outage:** **transactional outbox + idempotency**. Receiver: verify signature (raw body) → `INSERT ... ON CONFLICT (provider, event_id, payload_hash)` → 200; bila DB down → **503** agar provider retry. Relay `FOR UPDATE SKIP LOCKED` + DLQ + replay. PHBI sync (outbound) pakai outbox.
+- **L0.7 Crash/OOM:** `restart: unless-stopped` + healthcheck + memory limit.
+- **L0.8 Cold start:** dihapus oleh model long-running container.
+
+**Kunci resilience paling penting:** **halaman publik = ISR/static-first** → situs tetap melayani HTML cache walau Postgres down. Ini properti *durability*, bukan sekadar render.
+
+## G. Checklist Keputusan FINAL (32 item, semua lock-ready)
+
+Round 1 (revisi status): (1) 1 app Next16 ✅ · (2) Payload ≥3.78.0 in-app ✅ · (3) **NO Turborepo** ✅ · (4) **REVISI: 1 deployable VPS Docker** ✅ · (5) Postgres/Supabase ✅ · (6) publik ISR-first ✅ · (7) route-group + error boundary ✅ · (8) split via matcher ✅ · (9) push:false prod ✅ · (10) Payload auth (admin) + publik read-only ✅ · (11) **REVISI: `features/` sederhana, bukan FSD penuh** ✅.
+
+Round 2 (tambahan): (12) topologi 1 deployable ✅ · (13) isolasi by-construction ✅ · (14) coupling deploy publik/admin = **accepted limitation** ✅ · (15) kontrak migrasi entrypoint ✅ · (16) rollback tag + additive-only ✅ · (17) race hilang via single deployable ✅ · (18) dev `push` sandbox ✅ · (19) Supabase Pro wajib ✅ · (20) Pro daily + off-site mingguan ✅ · (21) PITR ditunda + trigger ✅ · (22) mirror media mingguan ✅ · (23) runbook + drill 6 bulan ✅ · (24) health liveness/readiness ✅ · (25) deploy gate + smoke + auto-revert ✅ · (26) cron di container + dead-man's-switch ✅ · (27) storage placeholder fallback ✅ · (28) outbox + idempotency (200/503) ✅ · (29) restart + limit memori ✅ · (30) cold-start dihapus ✅ · (31) trim L1 ke 3–4 segmen inti ✅ · (32) ⏳ **OPEN: konfirmasi provider payment retry ≥24 jam + event ID stabil** (hanya item terbuka; D5 payment masih hold — jalur aman sudah terdesain tanpa ini).
+
+## H. Verifikasi Eksternal (dukungan ahli/internet)
+
+- **Supabase docs** (backups & PITR): Pro daily 7 hari; Free harus `db dump` manual; PITR add-on ~$100/mo, butuh Small compute, mengganti daily backup, DB-only. ✅ cocok §E.
+- **Payload docs** (migrations) + artikel praktisi: `push:false`, `payload migrate && build`, deploy ditolak bila gagal, `prodMigrations` untuk long-running container, DDL transaksional. ✅ cocok §D.
+- **Artikel praktisi webhook (Midtrans/Xendit/Stripe)**: duplicate delivery, out-of-order, timeout → retry adalah **realita**; mitigasi = idempotency by event ID + payload hash, verify signature di raw body, bounded retry + review queue. ✅ cocok §F L0.6 dan memperkuat item #32.
+
+## I. Confidence
+
+**97%** (jujur). Satu-satunya item terbuka (#32) adalah fakta provider eksternal yang **tidak relevan sampai payment diputuskan (D5 hold)**; jalur "hold" aman karena outbox/idempotency/503-retry bersifat provider-agnostic, dan rencana sudah menyebut pull/reconciliation job bila provider tidak retry. Dengan itu, desain **siap untuk implementation plan** untuk semua modul non-payment.
