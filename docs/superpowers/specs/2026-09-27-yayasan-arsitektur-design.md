@@ -38,17 +38,24 @@
 
 | Kode | Keputusan | Nilai |
 |---|---|---|
-| D1 | Operator konten | **A + B** — pengembang (superadmin) + pengurus (role) |
+| D1 | Operator konten | **A + B** — pengembang + pengurus |
 | D2 | Cakupan CMS | **Semua area** (Lembaga, Kajian, Recap, Donasi, Kontak) |
 | D3 | Kondisi repo | Dijelaskan: monolitik, hardcoded (lihat §2) |
 | D4 | Recap PHBI | Sheet = **Source of Truth** → ditarik ke **DB** (snapshot resilient). Tampilan: **kartu per-event** |
 | D5 | Donasi | **Payment di-hold**, belum diputuskan |
-| Arsitektur | **Y** | Turborepo monorepo, `apps/web` + `apps/admin`, + error boundaries |
+| Arsitektur | **Y (ramping)** | Turborepo monorepo, `apps/web` + `apps/admin` (Payload), 2 package inti, + error boundaries |
 | Auth | **Strategy A** | Admin = identity provider; publik anonim (tanpa login) |
 | SSO | **(a)** | Social login (Google) + email/password |
+| CMS | **Payload CMS** | Panel admin siap-pakai (bukan admin custom) — hemat maintain untuk 2 dev |
 | DB | Rekomendasi | **PostgreSQL via Supabase** (Postgres + Auth + Storage), **Drizzle** ORM |
+| RBAC | **2 role** | `admin` + `editor` (naikkan bila benar-benar perlu) |
+| Konteks tim | **2 dev + AI** | Arsitektur harus ringan-maintain & aman untuk AI-generated code |
 
-**Framing yang dikoreksi:** Turborepo TIDAK memberi resilience runtime. Resilience berasal dari **error boundary + fallback data + pemisahan app**. Turborepo hanya memberi **isolasi deploy** (berguna karena ada 2 app).
+**Framing yang dikoreksi:** Turborepo TIDAK memberi resilience runtime. Resilience berasal dari **error boundary + fallback data + pemisahan app**. Turborepo hanya memberi **isolasi deploy**. Karena kriteria pemilik tunggal = **resilient + 2 dev + AI-assisted**, maka:
+
+- **Resilience** dicapai oleh 3 mekanisme (Bagian 2 & §12), bukan oleh Turborepo/pilihan CMS.
+- **CMS template (Payload)** dipilih karena membangun admin custom = beban maintain besar yang tidak sepadan untuk 2 dev.
+- **Monorepo dirampingkan**: hanya `apps/web`, `apps/admin`, `packages/core`, `packages/db`. `auth`/`sync`/`ui` menyusul saat benar-benar butuh (YAGNI).
 
 ---
 
@@ -57,30 +64,28 @@
 ```
 yayasan-monorepo/
 ├─ apps/
-│  ├─ web/          # PUBLIC face — anonim
-│  └─ admin/        # CMS face — wajib login (identity provider)
+│  ├─ web/          # PUBLIC face — anonim, baca DB (read-only)
+│  └─ admin/        # CMS face — Payload CMS (login, CRUD)
 ├─ packages/
-│  ├─ db/           # Drizzle schema + client + migrations
-│  ├─ auth/         # Supabase Auth wrapper (email/password + Google OAuth), RBAC
-│  ├─ core/         # domain types, Zod schemas, kontrak (SATU sumber aturan)
-│  ├─ ui/           # komponen presentational bersama
-│  ├─ sync/         # Sheet -> DB sync (job, parser, upsert, lastSyncedAt)
-│  └─ config/       # shared tsconfig / eslint / tailwind preset
+│  ├─ core/         # domain types, Zod schemas, kontrak  (SATU sumber aturan)
+│  └─ db/           # Drizzle schema + client + migrations
 ├─ turbo.json
 ├─ pnpm-workspace.yaml
 └─ package.json
 ```
 
+Package tambahan (`auth`, `sync`, `ui`) **ditambahkan hanya saat dibutuhkan** (YAGNI) — bukan dibuat di awal.
+
 **Keputusan kunci:**
 
-1. `apps/web` dan `apps/admin` **deploy terpisah** (dua project, mis. Vercel). Inilah sumber "publik tidak down walau admin rusak".
-2. **Satu Postgres** untuk keduanya, diakses lewat `packages/db`. Admin menulis; web membaca. Menghindari divergensi data.
-3. `packages/auth` di-share, tetapi hanya `apps/admin` yang butuh login (Strategy A).
-4. `packages/sync` terisolasi — kegagalan sync tidak menjatuhkan app.
-5. `packages/core` menghapus coupling route↔UI (mis. API impor ke komponen route).
+1. `apps/web` dan `apps/admin` **deploy terpisah**. Ini sumber "publik tidak down walau admin rusak".
+2. **Satu Postgres** (Supabase) untuk keduanya. Admin menulis; web membaca. Menghindari divergensi data.
+3. **Admin = Payload CMS**, bukan admin custom. Payload adalah app Next.js yang berjalan di `apps/admin`; memberi CRUD, auth, RBAC, upload, draft — tanpa membangun dari nol.
+4. `packages/core` menghapus coupling route↔UI (mis. API impor ke komponen route) dan menjaga satu sumber validasi/tipe.
+5. Legenda backend lengkap ada di **§11**.
 6. **FSD berada di dalam tiap app**, bukan di root repo.
 
-**Migrasi:** tidak ada "big bang rewrite". `apps/web` dimulai dari salinan rute publik yang ada, lalu di-refactor bertahap ke FSD sambil tetap jalan. `apps/admin` dibangun baru.
+**Migrasi:** tidak ada "big bang rewrite". `apps/web` dimulai dari salinan rute publik yang ada, lalu di-refactor bertahap ke FSD sambil tetap jalan. `apps/admin` dibangun di atas template Payload.
 
 ---
 
@@ -127,62 +132,61 @@ Tambahan: `app/global-error.tsx` (jaring terakhir) dan `app/not-found.tsx` (404 
 
 ## 6. Bagian 3 — Auth Flow (admin sebagai Identity Provider) + RBAC
 
-**Alur:** Pengurus buka `apps/admin` → redirect `/login` → email/password **atau** Sign in with Google (Supabase OAuth) → session JWT di cookie httpOnly (via `@supabase/ssr`) → `middleware.ts` cek session tiap request → cek tabel `admin_users` untuk role → render dashboard sesuai RBAC.
+**Alur:** Pengurus buka `apps/admin` → Payload `users` collection login → email/password **atau** Sign in with Google (OAuth) → session cookie httpOnly → Payload Access Control menegakkan role.
 
-**Komponen `packages/auth`:** `createServerClient()`, `createBrowserClient()`, `requireSession()`, `requireRole(role)`, `signOutAll()`.
+**Auth disediakan oleh Payload** (di atas Supabase/DB). Tidak menulis library auth sendiri — YAGNI untuk 2 dev. Bila nanti butuh auth di `apps/web` juga, baru diekstrak ke `packages/auth`.
 
-**RBAC (`admin_users`):**
+**RBAC (Payload Access Control) — 2 role:**
 
 | Role | Boleh |
 |---|---|
-| `superadmin` | Semua, termasuk kelola user admin |
+| `admin` | Semua, termasuk kelola user admin |
 | `editor` | CRUD konten, tanpa kelola user |
-| `lembaga_tk` | Hanya konten lembaga TK |
-| `lembaga_takmir` | Hanya konten lembaga Takmir |
-| `viewer` | Read-only (mis. bendahara lihat donatur) |
 
-**Secrets:** `SUPABASE_SERVICE_ROLE_KEY` hanya di server `apps/admin` + `packages/sync`; **tidak pernah** di `apps/web` client.
+Role tambahan (per-lembaga, viewer) **ditambahkan hanya bila benar-benar diperlukan** — bukan di awal.
+
+**Secrets:** `SUPABASE_SERVICE_ROLE_KEY` hanya di server (admin/sync worker); **tidak pernah** di client `apps/web`.
 
 ---
 
 ## 7. Bagian 4 — Layer Data (Sheet = SOT → DB snapshot → fallback UI)
 
-**Alur:** Google Sheet (SOT) → `packages/sync` (fetch → parse/validate Zod → upsert idempoten → catat `sync_runs`) → Postgres (`phbi_recap`) → `apps/web` baca DB saja.
+**Alur:** Google Sheet (SOT) → *sync worker* (fetch → parse/validate Zod → upsert idempoten → catat `sync_runs`) → Postgres (`phbi_recap`) → `apps/web` baca DB saja.
 
-**Prinsip:** UI tidak pernah memanggil Sheet langsung · sync idempoten (by `row_key`) · snapshot bertanggal (`synced_at`) · sync gagal ≠ data hilang · trigger via cron + tombol "Sync sekarang" di admin.
+**Sync worker** berada di `apps/admin` (mis. Payload custom endpoint / Route Handler `/api/sync/phbi`), bukan package terpisah — YAGNI. Bisa dipicu cron (Vercel/Supabase) atau tombol "Sync dari Sheet" di CMS.
 
-**Tabel (draf Drizzle):** `phbi_recap`, `sync_runs`, `campaigns`, `donors`, `prayers`, `lembaga_profiles`, `kajian_items`, `contact_messages`, `admin_users`.
+**Prinsip:** UI tidak pernah memanggil Sheet langsung · sync idempoten (by `row_key`) · snapshot bertanggal (`synced_at`) · sync gagal ≠ data hilang · fallback ke snapshot terakhir.
+
+**Tabel (draf Drizzle / Payload collections):** `phbi_recap`, `sync_runs`, `campaigns`, `donors`, `prayers`, `lembaga_profiles`, `kajian_items`, `contact_messages`, `admin_users`.
 
 **Fallback:** `RecapSection` (RSC) try query DB → catch → `<RecapFallback snapshot>`; ISR revalidate + `unstable_cache` bertag `recap`, invalidasi saat sync sukses.
 
 ---
 
-## 8. Bagian 5 — CMS untuk Semua Area
+## 8. Bagian 5 — CMS untuk Semua Area (Payload CMS)
 
-Semua modul admin di `apps/admin`, pola CRUD seragam:
+**Keputusan:** memakai **Payload CMS** (bukan admin custom). Payload adalah app Next.js yang berjalan di `apps/admin`, schema didefinisikan di **code (TypeScript collections)** → ikut version control, type-safe, AI-friendly.
 
-```
-app/(admin)/<modul>/
-  ├─ page.tsx            # list
-  ├─ new/page.tsx        # create
-  ├─ [id]/edit/page.tsx  # update
-  └─ actions.ts          # server actions + requireRole()
-```
+**Kenapa Payload (bukan admin custom):** CRUD admin, auth, RBAC, upload media, draft/publish, preview — semuanya sudah disediakan. Untuk **2 dev**, ini memangkas beban maintain drastis (tidak menulis list/form/guard untuk tiap modul).
 
-| Modul | Cakupan |
+**Collections Payload (draf):**
+
+| Collection | Cakupan |
 |---|---|
-| Dashboard | status `sync_runs`, jumlah konten, error terakhir |
-| Lembaga | profil, prestasi, fasilitas, program, galeri, ulasan (scope per-lembaga) |
-| Kajian | video / artikel / kitab (upload PDF, YouTube ID, editor artikel) |
-| Recap PHBI | read + "Sync sekarang" + koreksi manual |
-| Donasi | kampanye, donatur, doa (payment hold) |
-| Kontak | info kontak, sosial, jam operasional, inbox pesan |
-| Pengguna | `admin_users` + role (superadmin) |
-| Pengaturan | situs, mapping kolom Sheet |
+| `lembaga` | profil, prestasi, fasilitas, program, galeri, ulasan (per-lembaga) |
+| `kajian` | video (YouTube ID) / artikel (rich text) / kitab (upload PDF) |
+| `phbi-recap` | read + tombol "Sync dari Sheet" (hook memicu sync) + koreksi manual |
+| `campaigns` | kampanye donasi (payment hold) |
+| `donors` | donatur (input manual) |
+| `prayers` | doa/pesan donatur |
+| `contact-messages` | inbox kritik & saran |
+| `site-settings` | info kontak, sosial, jam operasional, mapping kolom Sheet |
+| `users` | akun admin + role (`admin` / `editor`) |
 
-- Mutasi via **Server Actions** (Next 16), validasi **Zod** dari `packages/core`.
-- Upload gambar/PDF → Supabase Storage.
-- Tiap modul CMS punya error boundary sendiri.
+- **RBAC 2 role**: `admin` (semua) dan `editor` (konten, tanpa kelola user). Payload Access Control menegakkan ini.
+- **Upload** gambar/PDF → Supabase Storage (atau storage adapter Payload).
+- **Validasi** memakai Zod dari `packages/core` (collection hooks).
+- Tiap area tetap punya **error boundary** di sisi `apps/web` saat menampilkannya.
 
 ---
 
@@ -211,35 +215,79 @@ interface PaymentProvider {
 - Info kontak/sosial/jam operasional: dari `data.ts` → **DB + CMS**.
 - Form kritik & saran: **Server Action** → `contact_messages` (name, anonymous, rating, message, created_at); admin punya inbox.
 - Validasi Zod di `packages/core`; rate-limit + honeypot (opsional).
-- Polish design: selaraskan ke design system `packages/ui`; perbaiki copy campur bahasa.
+- Polish design: selaraskan dengan design system (komponen bersama di `packages/ui` **bila sudah diekstrak**, atau `shared/ui` di dalam `apps/web` pada awalnya); perbaiki copy campur bahasa.
 - `mapEmbedUrl` dari DB/config.
 
 ---
 
-## 11. Matriks Resilience (bagaimana tiap ancaman ditangani)
+## 11. Backend — Stack Resmi
+
+Backend = **Supabase + Drizzle + Next.js Server Actions**, dibagi ke 5 lapis:
+
+| Lapis | Teknologi | Fungsi |
+|---|---|---|
+| 1. Database | **PostgreSQL via Supabase** | Simpan semua koleksi/tabel |
+| 2. Akses data | **Drizzle ORM** | Query type-safe, edge/serverless-friendly |
+| 3. Auth | **Supabase Auth** (via Payload) | Email/password + Google OAuth, session cookie |
+| 4. Storage | **Supabase Storage** | Upload gambar & PDF kitab |
+| 5. API | **Server Actions + Route Handlers** | CRUD admin (Payload), endpoint publik, webhook |
+
+**Distribusi akses:**
+- `apps/web` → baca DB (publik, read-only).
+- `apps/admin` (Payload) → tulis via CMS; server-only.
+- Sync worker (`/api/sync/phbi`) → service-role key, server-only.
+
+**Tanpa server backend terpisah.** Next.js App Router = backend. Ini menyederhanakan deploy dan sesuai motif resilien (satu titik deploy per app).
+
+**Keamanan:**
+- **Row Level Security (Supabase)** — publik hanya baca data published/active.
+- `SUPABASE_SERVICE_ROLE_KEY` **hanya** di server (admin/sync); tidak pernah ke client web.
+- **Validasi satu sumber**: Zod di `packages/core`, dipakai client + server + Payload hooks.
+
+---
+
+## 12. Jaminan Resilience & Cara Menegakkannya
+
+**Tiga mekanisme (inti resilience — tidak bergantung Turborepo atau CMS):**
+
+| Mekanisme | Jaminan |
+|---|---|
+| **Error boundary per-segmen & per-widget** | Modul PHBI error → hanya section itu fallback; web lain hidup |
+| **Fallback data (DB snapshot + cache)** | Sheet/API mati → tampil data terakhir, bukan blank |
+| **Pemisahan titik gagal** (1 database, 2 DB, 1 DB) | Admin rusak → publik tak tersentuh |
+
+**Aturan penegakan (WAJIB, karena 2 dev + AI-generated code):**
+
+1. **ESLint batas FSD** (`@yayasan/eslint-config`) — arah impor layer dipaksa; pelanggaran = error. AI/manusia tak bisa "salah arah" tanpa ketahuan.
+2. **Zod satu sumber** di `packages/core` — mencegah validasi berbeda di client/server (bug nyata yang ditemukan di repo lama).
+3. **Error boundary + test jalur kritis** (validasi donasi, parsing sync) — jaring agar AI tidak merusak yang sudah jalan. Minimal + CI (`lint + typecheck + build`).
+
+**Matriks ancaman → penanganan:**
 
 | Ancaman | Ditangani oleh |
 |---|---|
 | Deploy admin rusak → publik down | App terpisah (`web` \| `admin`) |
 | Modul PHBI error → web blank | Error boundary per-segmen + per-widget |
-| Sheet berubah/hilang → halaman error | `packages/sync` + snapshot DB + fallback |
-| Kode susah maintain, coupling | `packages/core`, FSD, batas modul |
-| Salah satu pengurus salah edit | RBAC ber-scope |
+| Sheet berubah/hilang → halaman error | Sync worker + snapshot DB + fallback |
+| Kode susah maintain, coupling | `packages/core`, FSD, batas modul, ESLint |
+| Salah edit oleh pengurus | RBAC Payload (2 role) |
 | Vendor payment berubah | `PaymentProvider` seam |
 
 ---
 
-## 12. Pertanyaan Terbuka (diputuskan saat implementation plan)
+## 13. Pertanyaan Terbuka (diputuskan saat implementation plan)
 
-1. Domain/URL `apps/admin` (mis. `admin.yayasan.app`).
-2. Editor artikel Kajian: markdown sederhana vs WYSIWYG.
+1. Domain/URL `apps/admin` (mis. `admin.yayasan.app`) dan domain `apps/web`.
+2. Editor artikel Kajian di Payload: rich text (Lexical) vs markdown.
 3. Detail mapping kolom Sheet PHBI (nama kolom) → menentukan parser sync.
+4. Apakah pakai Payload Cloud vs self-host Payload.
 
 ---
 
-## 13. Di Luar Cakupan (untuk saat ini)
+## 14. Di Luar Cakupan (untuk saat ini)
 
 - Integrasi payment gateway (D5 hold).
 - Rekonsiliasi keuangan otomatis.
 - Notifikasi (email/WA) otomatis.
+- `packages/auth`, `packages/ui`, `packages/sync` terpisah (ditambahkan hanya bila benar-benar perlu).
 - Test otomatis/CI (dapat ditambahkan sebagai fase terpisah).
