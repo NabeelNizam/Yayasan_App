@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSnapToken, validateDonationForm } from '@/lib/midtrans'
 import { DonationFormData, DonationCampaign } from '@/types/donation'
-import { donationCampaignsData } from '@/app/donasi/components/data'
+import { donationCampaignsData } from '@/app/(site)/donasi/components/data'
 import { PAYMENT_ENABLED } from '@/lib/store/donations'
 
 export async function POST(request: NextRequest) {
