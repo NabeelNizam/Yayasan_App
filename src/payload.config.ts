@@ -15,6 +15,8 @@ import { Campaign } from './collections/Campaign'
 import { Donor } from './collections/Donor'
 import { Prayer } from './collections/Prayer'
 import { ContactMessage } from './collections/ContactMessage'
+import { WebhookInbox } from './collections/WebhookInbox'
+import { JobRun } from './collections/JobRun'
 import { SiteSettings } from './globals/SiteSettings'
 
 export default buildConfig({
@@ -42,6 +44,8 @@ export default buildConfig({
     Donor,
     Prayer,
     ContactMessage,
+    WebhookInbox,
+    JobRun,
   ],
   globals: [SiteSettings],
 })
