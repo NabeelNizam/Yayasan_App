@@ -27,7 +27,11 @@ export function normalizeTentangKami(raw: RawTentangKami): TentangKamiContent {
 export async function getTentangKami(): Promise<TentangKamiContent> {
   const payload = await getPayload({ config })
   const settings = await payload
-    .findGlobal({ slug: 'site-settings', ...PUBLIC_READ })
+    .findGlobal({
+      slug: 'site-settings',
+      ...PUBLIC_READ,
+      select: { tentangKami: true },
+    })
     .catch(() => null)
   const raw = (settings as { tentangKami?: RawTentangKami } | null)?.tentangKami ?? null
   return normalizeTentangKami(raw)
