@@ -1,6 +1,6 @@
 import Image from "next/image"
 
-export default function Detail() {
+export default function Detail({ detail }: { detail?: string }) {
     return (
         <section className="w-full py-20 px-6 bg-white">
             <div className="max-w-6xl mx-auto">
@@ -24,21 +24,9 @@ export default function Detail() {
                     </div>
 
                     <div className="w-full md:w-2/3">
-                        <p className="text-justify leading-relaxed text-gray-700">
-                            Yayasan Masjid Al-Muhajirin merupakan lembaga keagamaan dan sosial
-                            yang berkomitmen untuk menjadi pusat pembinaan umat, dakwah,
-                            pendidikan, dan pelayanan masyarakat. Dengan berlandaskan nilai-nilai
-                            Islam, yayasan ini hadir untuk memperkuat ukhuwah Islamiyah,
-                            meningkatkan kualitas ibadah, serta memberikan manfaat nyata bagi
-                            jamaah dan lingkungan sekitar.
-                        </p>
-
-                        <p className="text-justify leading-relaxed text-gray-700 mt-4">
-                            Melalui berbagai kegiatan seperti kajian rutin, pendidikan
-                            keislaman, santunan sosial, pembinaan generasi muda, dan program
-                            kemasyarakatan lainnya, Yayasan Masjid Al-Muhajirin terus berupaya
-                            menciptakan lingkungan yang religius, harmonis, dan peduli terhadap
-                            sesama.
+                        <p className="text-justify leading-relaxed text-gray-700 whitespace-pre-line">
+                            {detail ||
+                                'Yayasan Masjid Al-Muhajirin merupakan lembaga keagamaan dan sosial yang berkomitmen untuk menjadi pusat pembinaan umat, dakwah, pendidikan, dan pelayanan masyarakat. Dengan berlandaskan nilai-nilai Islam, yayasan ini hadir untuk memperkuat ukhuwah Islamiyah, meningkatkan kualitas ibadah, serta memberikan manfaat nyata bagi jamaah dan lingkungan sekitar.'}
                         </p>
                     </div>
                 </div>
