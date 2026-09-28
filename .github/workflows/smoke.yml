@@ -1,0 +1,21 @@
+name: smoke
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Smoke test production endpoints
+        env:
+          BASE_URL: ${{ secrets.PRODUCTION_URL }}
+        run: |
+          set -e
+          test -n "$BASE_URL" || { echo "PRODUCTION_URL not set"; exit 1; }
+          curl -fsS "$BASE_URL/" > /dev/null
+          curl -fsS "$BASE_URL/api/health" > /dev/null
+          curl -fsS "$BASE_URL/api/health/ready" > /dev/null
+          echo "smoke ok"
+      - name: Rollback on failure
+        if: failure()
+        run: echo "Manual rollback via vercel rollback - see docs/runbooks/ops.md"

@@ -1,0 +1,46 @@
+name: backup
+on:
+  schedule:
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install postgres client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Dump database (public schema only)
+        env:
+          DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT }}
+        run: |
+          set -e
+          pg_dump "$DATABASE_URL_DIRECT" -Fc --no-owner --no-privileges \
+            --schema=public --exclude-schema=auth --exclude-schema=storage \
+            --exclude-schema=graphql -f backup.dump
+          ls -lh backup.dump
+
+      - name: Upload to object storage
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+        run: |
+          echo "TODO: install awscli and upload backup.dump to s3://$S3_BUCKET/yayasan-backup/"
+          echo "(skipped: credentials not configured)"
+
+      - name: Dead-man's-switch ping
+        if: success()
+        env:
+          HEALTHCHECK_PING_URL_BACKUP: ${{ secrets.HEALTHCHECK_PING_URL_BACKUP }}
+        run: |
+          if [ -n "$HEALTHCHECK_PING_URL_BACKUP" ]; then
+            curl -fsS "$HEALTHCHECK_PING_URL_BACKUP" || true
+          fi
