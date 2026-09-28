@@ -7,6 +7,7 @@ import Donasi from "../../components/sections/Donasi"
 export default function Home() {
   return (
     <main className="cursor-default">
+      <h1 className="sr-only">Yayasan Al-Muhajirin</h1>
       <TentangKami />
       <HeroCarousel />
       <Publikasi />
