@@ -13,3 +13,27 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+
+  integration:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && secrets.DATABASE_URL_DIRECT_SANDBOX != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - name: Apply migrations to sandbox
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
+          DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
+          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+        run: npm run payload -- migrate
+      - name: Run integration tests against sandbox
+        env:
+          CI: 'true'
+          DATABASE_URL_DIRECT_SANDBOX: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
+          DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
+          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+        run: npx vitest run --config vitest.integration.config.ts --exclude '**/relay.concurrency.test.ts'
