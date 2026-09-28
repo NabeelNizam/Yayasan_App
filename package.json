@@ -2,6 +2,7 @@
   "name": "yayasan-app",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,8 +11,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload",
-    "migrate": "pnpm payload migrate",
-    "migrate:create": "pnpm payload migrate:create --skip-empty",
+    "migrate": "npm run payload -- migrate",
+    "migrate:create": "npm run payload -- migrate:create --skip-empty",
+    "migrate:status": "npm run payload -- migrate:status",
     "ci:migrate": "node scripts/migrate.mjs"
   },
   "dependencies": {
@@ -47,6 +49,8 @@
     "deepmerge-ts": "^8.0.2"
   },
   "devDependencies": {
+    "@swc-node/register": "^1.12.1",
+    "@swc/core": "^1.16.2",
     "cross-env": "^7.0.3",
     "vitest": "^2.1.9"
   }

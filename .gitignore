@@ -33,3 +33,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# agent session scratch (plans/drafts are committed, run-continuation is not)
+.omo/run-continuation/
+
+# payload local uploads (staticDir: 'media')
+/media
