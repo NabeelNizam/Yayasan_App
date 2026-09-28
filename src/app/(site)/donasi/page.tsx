@@ -1,14 +1,16 @@
-import { Hero, Disclaimer, Quote, DonationGrid, donationCampaignsData } from './components'
+import { Hero, Disclaimer, Quote, DonationGrid } from './components'
+import { getCampaigns } from '@/features/donasi/getCampaigns'
 
 export const revalidate = 300
 
-export default function DonasiPage() {
+export default async function DonasiPage() {
+  const campaigns = await getCampaigns()
   return (
     <div className="min-h-screen pb-16">
       <Hero />
       <Disclaimer />
       <Quote />
-      <DonationGrid campaigns={donationCampaignsData} />
+      <DonationGrid campaigns={campaigns} />
     </div>
   )
 }
