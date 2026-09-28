@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "postinstall": "patch-package",
     "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload",
     "migrate": "npm run payload -- migrate",
     "migrate:create": "npm run payload -- migrate:create --skip-empty",
@@ -52,6 +53,7 @@
     "@swc-node/register": "^1.12.1",
     "@swc/core": "^1.16.2",
     "cross-env": "^7.0.3",
+    "patch-package": "^8.0.1",
     "vitest": "^2.1.9"
   }
 }
