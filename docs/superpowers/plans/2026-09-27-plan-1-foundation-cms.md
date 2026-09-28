@@ -1,3 +1,5 @@
+> **DEPRECATED — digantikan `.omo/plans/yayasan-plan-*.md`** (Plan 1 final = `.omo/plans/yayasan-plan-1.md`). Dokumen ini disimpan hanya sebagai arsip revisi.
+
 # Plan 1 — Fondasi, Backend & CMS Core (Yayasan Al-Muhajirin)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
