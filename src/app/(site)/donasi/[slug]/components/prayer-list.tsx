@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp, faHandsPraying } from '@fortawesome/free-solid-svg-icons'
-import { Prayer } from '@/types/donation'
+import type { PrayerListItem } from '@/features/donasi/getDetail'
 import { getRelativeTime } from '../../components/data'
 
 interface PrayerListProps {
-  prayers: Prayer[]
+  prayers: PrayerListItem[]
 }
 
 export default function PrayerList({ prayers }: PrayerListProps) {

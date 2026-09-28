@@ -1,11 +1,11 @@
-import Image from 'next/image'
+import MediaImage from '@/components/MediaImage'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUsers, faBullseye } from '@fortawesome/free-solid-svg-icons'
-import { DonationCampaign } from '@/types/donation'
+import type { CampaignItem } from '@/features/donasi/getCampaigns'
 import { formatCurrency, calculateProgress } from '../../components/data'
 
 interface DonationHeaderProps {
-  campaign: DonationCampaign
+  campaign: CampaignItem
 }
 
 export default function DonationHeader({ campaign }: DonationHeaderProps) {
@@ -15,8 +15,8 @@ export default function DonationHeader({ campaign }: DonationHeaderProps) {
     <section className="overflow-hidden rounded-2xl bg-white shadow-lg">
       {/* Cover Image */}
       <div className="relative h-64 w-full overflow-hidden bg-gray-100 sm:h-80 lg:h-96">
-        <Image
-          src={campaign.coverImage}
+        <MediaImage
+          src={campaign.coverImageUrl ?? '/logo.svg'}
           alt={campaign.title}
           fill
           className="object-cover"

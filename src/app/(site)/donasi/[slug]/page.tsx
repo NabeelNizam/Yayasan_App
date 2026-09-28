@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
-import { getCampaignBySlug, getDonorsByCampaign, getPrayersByCampaign } from '../components/data'
+import { getCampaignBySlug, getDonorsByCampaign, getPrayersByCampaign } from '@/features/donasi/getDetail'
 import {
   DonationHeader,
   DonationForm,
@@ -22,14 +22,16 @@ export default async function DonationDetailPage({
   const { slug } = await params
   const { status, order_id } = await searchParams
 
-  const campaign = getCampaignBySlug(slug)
+  const campaign = await getCampaignBySlug(slug)
 
   if (!campaign) {
     notFound()
   }
 
-  const donors = getDonorsByCampaign(slug)
-  const prayers = getPrayersByCampaign(slug)
+  const [donors, prayers] = await Promise.all([
+    getDonorsByCampaign(slug),
+    getPrayersByCampaign(slug),
+  ])
 
   // Payment status message
   const getStatusMessage = () => {

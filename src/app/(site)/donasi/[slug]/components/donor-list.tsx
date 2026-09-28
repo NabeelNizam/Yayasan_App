@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp, faHeart } from '@fortawesome/free-solid-svg-icons'
-import { Donor } from '@/types/donation'
+import type { DonorListItem } from '@/features/donasi/getDetail'
 import { formatCurrency, getRelativeTime } from '../../components/data'
 
 interface DonorListProps {
-  donors: Donor[]
+  donors: DonorListItem[]
 }
 
 export default function DonorList({ donors }: DonorListProps) {
