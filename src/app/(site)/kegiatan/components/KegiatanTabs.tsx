@@ -13,8 +13,10 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import LembagaDirectory from "./LembagaDirectory"
 import RecapCards from "./RecapCards"
+import KajianList from "./KajianList"
 import type { LembagaItem } from "@/features/lembaga/getList"
 import type { RecapItem } from "@/features/recap/getList"
+import type { KajianItem } from "@/features/kajian/getList"
 
 const TABS = [
     {
@@ -39,7 +41,7 @@ const TABS = [
 
 type TabKey = typeof TABS[number]["key"]
 
-export default function KegiatanTabs({ lembaga, recap }: { lembaga: LembagaItem[]; recap: RecapItem[] }) {
+export default function KegiatanTabs({ lembaga, recap, kajian }: { lembaga: LembagaItem[]; recap: RecapItem[]; kajian: KajianItem[] }) {
     const [activeTab, setActiveTab] = useState<TabKey>("lembaga")
 
     const activeTabData = TABS.find((t) => t.key === activeTab)!
@@ -122,85 +124,10 @@ ${isActive
                     key={activeTab}
                 >
                     {activeTab === "lembaga" && <LembagaDirectory items={lembaga} />}
-                    {activeTab === "kajian" && <KajianList />}
+                    {activeTab === "kajian" && <KajianList items={kajian} />}
                     {activeTab === "recap" && <RecapCards items={recap} />}
                 </div>
             </div>
-        </div>
-    )
-}
-
-const kajianData = [
-    {
-        id: "video",
-        title: "Video",
-        description: "Saksikan video kajian sesuai topik yang Anda suka, lalu tonton kapan pun Anda mau.",
-        image: "/images/kegiatan/icon/kajian.svg", // Placeholder SVG
-        ctaText: "Tonton Video",
-        ctaHref: "#",
-    },
-    {
-        id: "artikel",
-        title: "Artikel",
-        description: "Perkaya wawasan Anda dengan beragam artikel kajian inspiratif.",
-        image: "/images/kegiatan/icon/organisasi.svg", // Placeholder SVG
-        ctaText: "Baca Artikel",
-        ctaHref: "#",
-    },
-    {
-        id: "kitab",
-        title: "Kitab",
-        description: "Unduh dan pelajari langsung materi-materi kajian dari sumbernya.",
-        image: "/images/kegiatan/icon/phbi.svg", // Placeholder SVG
-        ctaText: "Jelajahi Kitab",
-        ctaHref: "#",
-    }
-]
-
-function KajianList() {
-    return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-4">
-            {kajianData.map((item) => (
-                <div
-                    key={item.id}
-                    className="flex w-full max-w-[380px] mx-auto flex-col items-center justify-between rounded-3xl bg-[#059035] px-8 py-12 shadow-lg transition-transform duration-300 hover:-translate-y-2 min-h-[500px]"
-                >
-                    <div className="flex flex-col items-center">
-                        {/* Illustration */}
-                        <div className="mb-10 flex h-40 w-full items-center justify-center">
-                            {/* We use generic SVGs for now, user needs to replace these with actual illustrations */}
-                            <Image
-                                src={item.image}
-                                alt={`Ilustrasi ${item.title}`}
-                                width={180}
-                                height={180}
-                                className="h-full w-full object-contain drop-shadow-xl"
-                            />
-                        </div>
-
-                        {/* Text Content */}
-                        <h2 className="mb-4 text-center text-2xl font-bold text-white">
-                            {item.title}
-                        </h2>
-                        
-                        <p className="mb-10 text-center text-sm leading-relaxed text-white/90 px-2">
-                            {item.description}
-                        </p>
-                    </div>
-
-                    {/* CTA Button */}
-                    <Link
-                        href={item.ctaHref}
-                        className="group inline-flex w-max items-center justify-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-bold text-[#059035] shadow-sm transition-all duration-300 hover:bg-gray-50 hover:shadow-md"
-                    >
-                        {item.ctaText}
-                        <FontAwesomeIcon
-                            icon={faArrowRight}
-                            className="text-xs transition-transform duration-300 group-hover:translate-x-1"
-                        />
-                    </Link>
-                </div>
-            ))}
         </div>
     )
 }
