@@ -16,7 +16,6 @@ jobs:
 
   integration:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && secrets.DATABASE_URL_DIRECT_SANDBOX != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,13 +23,29 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm install --no-audit --no-fund
+
+      - name: Check sandbox secret
+        id: sandbox
+        env:
+          SANDBOX: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
+        run: |
+          if [ -n "$SANDBOX" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DATABASE_URL_DIRECT_SANDBOX not set - skipping integration tests"
+          fi
+
       - name: Apply migrations to sandbox
+        if: steps.sandbox.outputs.present == 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
           DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
           PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
         run: npm run payload -- migrate
+
       - name: Run integration tests against sandbox
+        if: steps.sandbox.outputs.present == 'true'
         env:
           CI: 'true'
           DATABASE_URL_DIRECT_SANDBOX: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
