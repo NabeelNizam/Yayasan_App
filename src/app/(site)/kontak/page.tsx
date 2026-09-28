@@ -9,6 +9,8 @@ import {
   mapEmbedUrl,
 } from './components'
 
+export const revalidate = 300
+
 export default function KontakPage() {
   return (
     <div className="min-h-screen">

@@ -4,6 +4,8 @@ import Publikasi from "../../components/sections/Publikasi"
 import Kegiatan from "../../components/sections/Kegiatan"
 import Donasi from "../../components/sections/Donasi"
 
+export const revalidate = 300
+
 export default function Home() {
   return (
     <main className="cursor-default">

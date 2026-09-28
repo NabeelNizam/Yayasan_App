@@ -7,6 +7,8 @@ import Dokumentasi from "./components/Dokumentasi"
 import Navbar from "./components/Navbar"
 import Footer from "./components/Footer"
 
+export const revalidate = 300
+
 export default function TKPage() {
   return (
     <main className="min-h-screen bg-white -mt-16">

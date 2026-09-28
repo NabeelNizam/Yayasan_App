@@ -1,16 +1,7 @@
 import { unstable_cache } from 'next/cache'
+import { REVALIDATE_SECONDS } from './constants'
 
-/** ISR window for public reads (Plan 2 Task 3). */
-export const REVALIDATE_SECONDS = 300
-
-/** Cache tag invalidated by the PHBI sync (revalidateTag('phbi')). */
-export const PHBI_TAG = 'phbi'
-
-/**
- * Public reads MUST run with access control on, so published/draft
- * filtering and PII rules are enforced by Payload (never bypassed).
- */
-export const PUBLIC_READ = { overrideAccess: false as const }
+export { REVALIDATE_SECONDS, PHBI_TAG, PUBLIC_READ } from './constants'
 
 /**
  * Wrap a data loader in Next's cache with a shared revalidate window and
@@ -26,3 +17,4 @@ export function tagged<TArgs extends unknown[], TResult>(
     tags,
   })
 }
+
