@@ -12,7 +12,9 @@ import {
     faArrowRight,
 } from "@fortawesome/free-solid-svg-icons"
 import LembagaDirectory from "./LembagaDirectory"
+import RecapCards from "./RecapCards"
 import type { LembagaItem } from "@/features/lembaga/getList"
+import type { RecapItem } from "@/features/recap/getList"
 
 const TABS = [
     {
@@ -37,7 +39,7 @@ const TABS = [
 
 type TabKey = typeof TABS[number]["key"]
 
-export default function KegiatanTabs({ lembaga }: { lembaga: LembagaItem[] }) {
+export default function KegiatanTabs({ lembaga, recap }: { lembaga: LembagaItem[]; recap: RecapItem[] }) {
     const [activeTab, setActiveTab] = useState<TabKey>("lembaga")
 
     const activeTabData = TABS.find((t) => t.key === activeTab)!
@@ -121,7 +123,7 @@ ${isActive
                 >
                     {activeTab === "lembaga" && <LembagaDirectory items={lembaga} />}
                     {activeTab === "kajian" && <KajianList />}
-                    {activeTab === "recap" && <RecapList />}
+                    {activeTab === "recap" && <RecapCards items={recap} />}
                 </div>
             </div>
         </div>
@@ -202,75 +204,3 @@ function KajianList() {
         </div>
     )
 }
-
-const recapData = [
-    {
-        id: "idul-adha-2024",
-        title: "Idul Adha 1445 H Tahun 2024",
-        date: "10 Juni 2024",
-        description: "Perayaan Idul Adha 1445 H dengan pelaksanaan sholat eid, penyembelihan hewan qurban, dan pembagian daging qurban kepada jamaah dan masyarakat sekitar.",
-        image: "/images/carousel/gambar1.jpg",
-        link: "#"
-    },
-    {
-        id: "ramadhan-2024",
-        title: "Semarak Ramadhan 1445 H",
-        date: "11 Maret 2024",
-        description: "Kegiatan selama bulan suci Ramadhan meliputi sholat tarawih berjamaah, kajian menjelang berbuka, dan pembagian takjil gratis setiap hari.",
-        image: "/images/carousel/gambar2.jpg",
-        link: "#"
-    }
-]
-
-function RecapList() {
-    return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-4">
-            {recapData.map((item) => (
-                <div 
-                    key={item.id} 
-                    className="flex flex-col rounded-2xl bg-white p-4 border border-gray-100 shadow-sm transition-transform duration-300 hover:-translate-y-1.5 hover:shadow-md"
-                >
-                    {/* Image */}
-                    <div className="relative mb-4 w-full aspect-[4/3] overflow-hidden rounded-xl bg-gray-100">
-                        <Image
-                            src={item.image}
-                            alt={item.title}
-                            fill
-                            className="object-cover transition-transform duration-500 hover:scale-105"
-                        />
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="mb-3 text-lg font-bold text-[#0B7932] leading-snug line-clamp-2">
-                        {item.title}
-                    </h3>
-
-                    {/* Date */}
-                    <div className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-gray-700">
-                        <FontAwesomeIcon icon={faCalendarDays} className="text-[#0B7932]" />
-                        <span>{item.date}</span>
-                    </div>
-
-                    {/* Description */}
-                    <p className="mb-6 flex-1 text-sm leading-relaxed text-gray-600 line-clamp-3">
-                        {item.description}
-                    </p>
-
-                    {/* Button */}
-                    <Link
-                        href={item.link}
-                        className="group mt-auto inline-flex w-max items-center justify-center gap-2 rounded-full border border-[#0B7932] px-5 py-2 text-xs font-semibold text-[#0B7932] transition-colors duration-300 hover:bg-[#0B7932] hover:text-white"
-                    >
-                        <span>Selengkapnya</span>
-                        <div className="flex items-center justify-center rounded-full border border-current p-0.5 w-4 h-4">
-                            <FontAwesomeIcon
-                                icon={faArrowRight}
-                                className="text-[8px] transition-transform duration-300 group-hover:translate-x-0.5"
-                            />
-                        </div>
-                    </Link>
-                </div>
-            ))}
-        </div>
-    )
-}
