@@ -9,4 +9,4 @@ if (process.env.VERCEL_ENV === 'production') {
   console.log('skip migrate (non-production deploy)')
 }
 
-run('npm run build')
+run('npx next build')
