@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useRef, FormEvent } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faStar, faPaperPlane, faCheck } from '@fortawesome/free-solid-svg-icons'
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/types/donation'
 import { formatCurrency } from '../../components/data'
 import LargeDonationDialog from './large-donation-dialog'
+import { submitDonation } from '@/features/donation/actions'
 
 interface DonationFormProps {
   campaignSlug: string
@@ -31,23 +32,7 @@ export default function DonationForm({ campaignSlug, campaignTitle }: DonationFo
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [showLargeDialog, setShowLargeDialog] = useState(false)
-  const [midtransLoaded, setMidtransLoaded] = useState(false)
-
-  // Load Midtrans Snap script
-  useEffect(() => {
-    const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY
-    if (!clientKey) return
-
-    const script = document.createElement('script')
-    script.src = 'https://app.sandbox.midtrans.com/snap/snap.js'
-    script.setAttribute('data-client-key', clientKey)
-    script.onload = () => setMidtransLoaded(true)
-    document.body.appendChild(script)
-
-    return () => {
-      document.body.removeChild(script)
-    }
-  }, [])
+  const clientTokenRef = useRef('')
 
   // Client-side validation
   const validateForm = (): boolean => {
@@ -108,45 +93,32 @@ export default function DonationForm({ campaignSlug, campaignTitle }: DonationFo
     await processDonation()
   }
 
-  // Process donation with Midtrans
   const processDonation = async () => {
     setIsSubmitting(true)
+    if (!clientTokenRef.current) {
+      clientTokenRef.current = crypto.randomUUID()
+    }
 
     try {
-      const response = await fetch('/api/donasi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          campaignSlug,
-          ...formData,
-        }),
+      const result = await submitDonation({
+        campaignSlug,
+        clientToken: clientTokenRef.current,
+        donorName: formData.donorName,
+        anonymous: formData.isAnonymous,
+        whatsapp: formData.whatsapp,
+        email: formData.email,
+        amount: formData.amount,
+        prayer: formData.prayer,
       })
 
-      const result = await response.json()
-
-      if (!result.success) {
-        setErrors({ amount: result.error || 'Gagal memproses donasi' })
+      if (!result.ok) {
+        const firstError = Object.values(result.errors).flat().filter(Boolean)[0]
+        setErrors({ amount: firstError || 'Gagal memproses donasi' })
         setIsSubmitting(false)
         return
       }
 
-      // Open Midtrans Snap
-      if (result.token && window.snap) {
-        window.snap.pay(result.token, {
-          onSuccess: () => {
-            setSubmitted(true)
-          },
-          onPending: () => {
-            setSubmitted(true)
-          },
-          onError: () => {
-            setErrors({ amount: 'Pembayaran gagal' })
-          },
-          onClose: () => {
-            // User closed Snap popup
-          },
-        })
-      }
+      setSubmitted(true)
     } catch (error) {
       console.error('Error processing donation:', error)
       setErrors({ amount: 'Terjadi kesalahan sistem' })
@@ -183,10 +155,10 @@ export default function DonationForm({ campaignSlug, campaignTitle }: DonationFo
               <FontAwesomeIcon icon={faCheck} className="text-2xl text-green-600" />
             </div>
             <h3 className="mb-2 text-xl font-bold text-gray-900">
-              Donasi sedang diproses!
+              Terima kasih!
             </h3>
             <p className="mb-6 text-sm text-gray-600">
-              Silakan selesaikan pembayaran melalui popup Midtrans yang muncul.
+              Donasi Anda telah kami catat. Tim yayasan akan menghubungi Anda melalui WhatsApp untuk konfirmasi.
             </p>
             <button
               onClick={resetForm}
@@ -392,7 +364,7 @@ export default function DonationForm({ campaignSlug, campaignTitle }: DonationFo
             </button>
 
             <p className="text-center text-xs text-gray-500">
-              Pembayaran aman melalui Midtrans
+              Konfirmasi donasi dilakukan melalui WhatsApp
             </p>
           </form>
         )}
@@ -406,18 +378,4 @@ export default function DonationForm({ campaignSlug, campaignTitle }: DonationFo
       />
     </>
   )
-}
-
-// Extend window interface for Snap
-declare global {
-  interface Window {
-    snap: {
-      pay: (token: string, options: {
-        onSuccess?: () => void
-        onPending?: () => void
-        onError?: () => void
-        onClose?: () => void
-      }) => void
-    }
-  }
 }

@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faStar, faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 import { FeedbackFormData } from './types'
+import { submitFeedback } from '@/features/contact/actions'
 
 export default function FeedbackForm() {
   const [formData, setFormData] = useState<FeedbackFormData>({
@@ -12,20 +13,32 @@ export default function FeedbackForm() {
     rating: 0,
     message: '',
   })
+  const [honeypot, setHoneypot] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setError('')
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    const result = await submitFeedback({
+      rating: formData.rating,
+      message: formData.message,
+      name: formData.name,
+      isAnonymous: formData.isAnonymous,
+      honeypot,
+    })
 
     setIsSubmitting(false)
-    setSubmitted(true)
 
-    // Reset form after showing success message
+    if (!result.ok) {
+      setError('Kritik & saran gagal dikirim. Periksa rating dan pesan Anda.')
+      return
+    }
+
+    setSubmitted(true)
     setTimeout(() => {
       setSubmitted(false)
       setFormData({
@@ -34,6 +47,7 @@ export default function FeedbackForm() {
         rating: 0,
         message: '',
       })
+      setHoneypot('')
     }, 3000)
   }
 
@@ -64,6 +78,16 @@ export default function FeedbackForm() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
+              <input
+                type="text"
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="absolute left-[-9999px] h-0 w-0 opacity-0"
+              />
               {/* Name Field */}
               <div>
                 <label
@@ -159,6 +183,7 @@ export default function FeedbackForm() {
               </div>
 
               {/* Submit Button */}
+              {error ? <p className="text-sm text-red-500">{error}</p> : null}
               <button
                 type="submit"
                 disabled={isSubmitting || formData.rating === 0 || !formData.message}
