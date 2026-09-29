@@ -61,6 +61,31 @@ export async function countDonorsByOrderOrName(tag: string): Promise<number> {
   return r.rows[0].n as number
 }
 
+export async function donorsForCampaign(slug: string): Promise<
+  { name: string; amount: string; is_anonymous: boolean; order_id: string | null }[]
+> {
+  const r = await db().query(
+    `select name, amount, is_anonymous, order_id from donors where campaign_slug = $1 order by id`,
+    [slug]
+  )
+  return r.rows as {
+    name: string
+    amount: string
+    is_anonymous: boolean
+    order_id: string | null
+  }[]
+}
+
+export async function prayersForCampaign(slug: string): Promise<
+  { donor_name: string; message: string }[]
+> {
+  const r = await db().query(
+    `select donor_name, message from prayers where campaign_slug = $1 order by id`,
+    [slug]
+  )
+  return r.rows as { donor_name: string; message: string }[]
+}
+
 /** Delete every row this run created. Safe: matches only our unique tag. */
 export async function cleanupTaggedRows(tag: string): Promise<void> {
   await db().query(`delete from contact_messages where message like $1`, [`%${tag}%`])

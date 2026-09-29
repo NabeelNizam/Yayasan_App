@@ -34,7 +34,11 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL,
-      max: 1,
+      // Supabase's transaction pooler does not pipeline queries, so max: 1 made
+      // writes queue: an admin PATCH issuing several statements waited ~20s.
+      // This app runs a long-lived Next server, and Supabase says to raise the
+      // pool once work queues on one instance. 5 adds headroom safely.
+      max: 5,
       ...(isPooler ? { prepare: false } : {}),
       ssl: { rejectUnauthorized: false },
     },

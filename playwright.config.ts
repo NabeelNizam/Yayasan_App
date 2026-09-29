@@ -14,6 +14,7 @@ import { defineConfig, devices } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/load-env.ts',
   // The dev server compiles routes on first hit, so allow a generous budget
   // per test and do not run specs in parallel against one dev server.
   fullyParallel: false,
@@ -37,14 +38,16 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  // Reuse a running dev server if present; otherwise start one.
+  // Run against a production build: `next dev` compiles routes on demand, which
+  // makes a full suite slow and intermittently flaky, and a prod build is
+  // closer to what ships. Set E2E_DEV=1 to use the dev server instead.
   webServer: process.env.E2E_NO_SERVER
     ? undefined
     : {
-        command: 'npm run dev',
+        command: process.env.E2E_DEV ? 'npm run dev' : 'npm run build && npm run start',
         url: 'http://localhost:3000/api/health',
-        reuseExistingServer: true,
-        timeout: 120_000,
+        reuseExistingServer: false,
+        timeout: 240_000,
         stdout: 'ignore',
         stderr: 'pipe',
       },

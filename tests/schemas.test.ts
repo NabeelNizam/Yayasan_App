@@ -33,6 +33,14 @@ describe('donationSchema', () => {
   it('requires a clientToken of at least 8 chars', () => {
     expect(donationSchema.safeParse({ ...valid, clientToken: 'short' }).success).toBe(false)
   })
+  it('requires a name of at least 3 chars for a named donation', () => {
+    expect(donationSchema.safeParse({ ...valid, donorName: 'ab' }).success).toBe(false)
+    expect(donationSchema.safeParse({ ...valid, donorName: '  ' }).success).toBe(false)
+  })
+  it('allows an empty name when the donation is anonymous', () => {
+    const r = donationSchema.safeParse({ ...valid, anonymous: true, donorName: '' })
+    expect(r.success).toBe(true)
+  })
 })
 
 describe('contactSchema', () => {

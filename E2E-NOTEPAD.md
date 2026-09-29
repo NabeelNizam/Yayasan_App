@@ -40,20 +40,32 @@ Deteksi bug dini lewat E2E browser sungguhan (bukan hanya unit test), menutup se
 ## Status
 - [x] Install @playwright/test + playwright.config.ts
 - [x] helpers/seed + helpers/db (cleanup)
-- [x] smoke.spec.ts  -> 8/8 PASS
-- [ ] feedback.spec.ts
-- [ ] donation.spec.ts
-- [ ] admin.spec.ts
-- [ ] Jalankan semua, laporkan temuan bug nyata (jika ada)
+- [x] smoke.spec.ts            -> 8/8 PASS
+- [x] feedback.spec.ts         -> 4/4 PASS
+- [x] donation.spec.ts         -> 6/6 PASS
+- [x] admin.spec.ts            -> 3/3 PASS
+- [x] Full suite 21/21 PASS, stabil 2x berturut (vs production build)
 
-## BUG ditemukan & DIPERBAIKI oleh E2E smoke (real browser)
-1. `/images/publikasi/default-publikasi.svg` tidak ada -> 404 di Hero TK + 6 gambar Dokumentasi.
-   FIX: buat placeholder SVG valid.
-2. `/img/kegiatan-kami.svg` tidak ada -> 404 banner /kegiatan.
-   FIX: buat placeholder SVG valid (gradient halus).
+## BUG ditemukan & DIPERBAIKI oleh E2E (real browser, bukan unit test)
+1. /images/publikasi/default-publikasi.svg tidak ada -> 404 di Hero TK + 6 gambar Dokumentasi.
+2. /img/kegiatan-kami.svg tidak ada -> 404 banner /kegiatan.
 3. fotbar.svg & tentang-kami.svg = 13.1 MB masing2 (JPEG dibungkus SVG, byte-identik!) ->
-   browser gagal decode (naturalWidth=0). FIX: ekstrak JPEG -> WebP 1200px (128 KB) &
-   1920px (254 KB). Total turun ~26 MB -> 382 KB (~98%).
+   browser gagal decode (naturalWidth=0). Ekstrak -> WebP 128 KB & 254 KB (~98% turun).
+4. feedback-form.tsx membuang pesan error server -> user yg kena rate-limit diberi tahu
+   "periksa rating dan pesan" (salah). Kini tampilkan pesan server sebenarnya.
+5. donationSchema: donorName wajib min 3 char -> DONASI ANONIM selalu gagal (form kirim nama
+   kosong saat anonim). Diperbaiki + regression test.
+6. payload.config.ts pool.max:1 -> admin PATCH ~20.000 ms (timeout di UI). Naikkan ke 5 ->
+   ~625 ms. (Supabase transaction pooler tidak pipeline; lihat docs.)
+
+## Catatan penting (jangan ulangi)
+- checkImages HARUS scroll halaman dulu (gambar lazy di bawah fold = naturalWidth 0).
+- E2E dijalankan vs PRODUCTION build (next build && next start), bukan next dev:
+  dev-server bikin 1 run penuh gagal/berhasil acak. Override: E2E_DEV=1.
+- `/donasi/*.jpg` di data.ts = dead code (tabel campaigns & media KOSONG).
+- SVG: JANGAN aktifkan dangerouslyAllowSVG.
+- admin: /admin/login cocok dgn prefix /admin -> cek login harus exclude '/login'.
+- Playwright TIDAK load .env.local -> globalSetup e2e/load-env.ts memuatnya.
 
 ## Catatan penting (jangan ulangi)
 - checkImages HARUS scroll halaman dulu: gambar lazy di bawah fold = naturalWidth 0 (false positive).
