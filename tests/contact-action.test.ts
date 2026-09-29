@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }))
+vi.mock('next/headers', () => ({ headers: vi.fn(async () => new Map([['x-forwarded-for', '10.0.0.1']])) }))
+vi.mock('@/features/rate-limit/check', () => ({
+  checkRateLimit: vi.fn(async () => ({ allowed: true, nextCount: 1, resetAt: 0, remaining: 99 })),
+}))
+
 const created: Record<string, unknown>[] = []
 const payloadDouble = {
   create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
@@ -35,6 +41,19 @@ describe('submitFeedback', () => {
 
   it('rejects an invalid rating without storing', async () => {
     const r = await submitFeedback({ ...base, rating: 9 })
+    expect(r.ok).toBe(false)
+    expect(created).toHaveLength(0)
+  })
+
+  it('rejects when the rate limit denies (no row stored)', async () => {
+    const { checkRateLimit } = await import('@/features/rate-limit/check')
+    ;(checkRateLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      allowed: false,
+      nextCount: 5,
+      resetAt: 0,
+      remaining: 0,
+    })
+    const r = await submitFeedback(base)
     expect(r.ok).toBe(false)
     expect(created).toHaveLength(0)
   })

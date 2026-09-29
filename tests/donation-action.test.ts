@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }))
+vi.mock('next/cache', () => ({ revalidateTag: vi.fn(), revalidatePath: vi.fn() }))
+vi.mock('next/headers', () => ({ headers: vi.fn(async () => new Map([['x-forwarded-for', '10.0.0.2']])) }))
+vi.mock('@/features/rate-limit/check', () => ({
+  checkRateLimit: vi.fn(async () => ({ allowed: true, nextCount: 1, resetAt: 0, remaining: 99 })),
+}))
 
 const store = new Map<string, Record<string, unknown>>()
 let nextId = 1
