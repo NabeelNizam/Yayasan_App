@@ -52,3 +52,69 @@ jobs:
           DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
           PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
         run: npx vitest run --config vitest.integration.config.ts --exclude '**/relay.concurrency.test.ts'
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --no-audit --no-fund
+
+      - name: Check sandbox secret
+        id: sandbox
+        env:
+          SANDBOX: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
+        run: |
+          if [ -n "$SANDBOX" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DATABASE_URL_DIRECT_SANDBOX not set - skipping e2e tests"
+          fi
+
+      - name: Write .env.local for the test run
+        if: steps.sandbox.outputs.present == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
+          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+        run: |
+          {
+            echo "DATABASE_URL=$DATABASE_URL"
+            echo "PAYLOAD_SECRET=$PAYLOAD_SECRET"
+            echo "NEXT_PUBLIC_SERVER_URL=http://localhost:3000"
+            echo "RELAY_SECRET=ci-e2e-relay-secret"
+          } > .env.local
+
+      - name: Apply migrations to sandbox
+        if: steps.sandbox.outputs.present == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
+          DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT_SANDBOX }}
+          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+        run: npm run payload -- migrate
+
+      - name: Install Playwright Chromium
+        if: steps.sandbox.outputs.present == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Run e2e suite against the production build
+        if: steps.sandbox.outputs.present == 'true'
+        env:
+          CI: 'true'
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e-report
+          retention-days: 7
+
+      - name: Remove the temporary env file
+        if: always()
+        run: rm -f .env.local
+
