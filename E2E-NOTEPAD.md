@@ -44,7 +44,11 @@ Deteksi bug dini lewat E2E browser sungguhan (bukan hanya unit test), menutup se
 - [x] feedback.spec.ts         -> 4/4 PASS
 - [x] donation.spec.ts         -> 6/6 PASS
 - [x] admin.spec.ts            -> 3/3 PASS
-- [x] Full suite 21/21 PASS, stabil 2x berturut (vs production build)
+- [x] api.spec.ts              -> 7/7 PASS  (health, ready, donasi 501, relay auth+run)
+- [x] errors.spec.ts           -> 6/6 PASS  (segment boundary, widget boundary, unbounded, 404, retry)
+- [x] kajian.spec.ts           -> 4/4 PASS  (video/artikel/kitab/404)
+- [x] Full suite 38/38 PASS, stabil 2x berturut (vs production build)
+- [x] SELURUH route publik + API + error boundary kini tercakup
 
 ## BUG ditemukan & DIPERBAIKI oleh E2E (real browser, bukan unit test)
 1. /images/publikasi/default-publikasi.svg tidak ada -> 404 di Hero TK + 6 gambar Dokumentasi.
