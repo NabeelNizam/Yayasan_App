@@ -77,4 +77,22 @@ describe('runPhbiSync (batch lookup)', () => {
     expect(res.skipped).toBe(1)
     expect(counts.update).toBe(1)
   })
+
+  it('throws when no CSV url is configured', async () => {
+    const { payload } = makePayloadDouble([])
+    const saved = process.env.PHBI_SHEET_CSV_URL
+    delete process.env.PHBI_SHEET_CSV_URL
+    await expect(runPhbiSync(payload)).rejects.toThrow('PHBI_SHEET_CSV_URL')
+    if (saved !== undefined) process.env.PHBI_SHEET_CSV_URL = saved
+  })
+
+  it('records a failed sync-run and rethrows when the fetch fails', async () => {
+    const { payload, counts } = makePayloadDouble([])
+    globalThis.fetch = (async () => {
+      throw new Error('network down')
+    }) as unknown as typeof fetch
+
+    await expect(runPhbiSync(payload, 'data:text/csv,event,year,date')).rejects.toThrow('network down')
+    expect(counts.create).toBe(1)
+  })
 })

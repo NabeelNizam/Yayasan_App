@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { registerWebhookHandler, getWebhookHandler, availableProviders } from '@/features/outbox/handlers'
+import { registerWebhookHandler, getWebhookHandler, availableProviders, resetWebhookHandlers, defaultWebhookHandler } from '@/features/outbox/handlers'
 
 describe('webhook handler registry', () => {
   it('returns undefined for an unknown provider', () => {
@@ -21,5 +21,18 @@ describe('webhook handler registry', () => {
 
   it('rejects an empty provider name', () => {
     expect(() => registerWebhookHandler('', async () => {})).toThrow()
+  })
+
+  it('resetWebhookHandlers clears the registry', () => {
+    registerWebhookHandler('temp-prov', async () => {})
+    resetWebhookHandlers()
+    expect(availableProviders()).toEqual([])
+    expect(getWebhookHandler('temp-prov')).toBeUndefined()
+  })
+
+  it('defaultWebhookHandler resolves without side effects', async () => {
+    await expect(
+      defaultWebhookHandler({ provider: 'x', eventId: 'e', payload: {} }),
+    ).resolves.toBeUndefined()
   })
 })

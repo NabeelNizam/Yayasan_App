@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "coverage": "vitest run --coverage",
     "postinstall": "patch-package",
     "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload",
     "migrate": "npm run payload -- migrate",
@@ -53,6 +54,7 @@
   "devDependencies": {
     "@swc-node/register": "^1.12.1",
     "@swc/core": "^1.16.2",
+    "@vitest/coverage-v8": "^2.1.9",
     "cross-env": "^7.0.3",
     "patch-package": "^8.0.1",
     "vitest": "^2.1.9"

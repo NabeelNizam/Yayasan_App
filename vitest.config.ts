@@ -7,6 +7,18 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     exclude: ['tests/integration/**', 'node_modules/**'],
     testTimeout: 60000,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      include: ['src/features/**', 'src/access/**', 'src/lib/**'],
+      exclude: ['**/*.d.ts'],
+      thresholds: {
+        statements: 80,
+        branches: 80,
+        functions: 80,
+        lines: 80,
+      },
+    },
   },
   resolve: {
     alias: {
