@@ -82,6 +82,7 @@ export interface Config {
     'contact-messages': ContactMessage;
     'webhook-inbox': WebhookInbox;
     'job-runs': JobRun;
+    'rate-limits': RateLimit;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -104,6 +105,7 @@ export interface Config {
     'contact-messages': ContactMessagesSelect<false> | ContactMessagesSelect<true>;
     'webhook-inbox': WebhookInboxSelect<false> | WebhookInboxSelect<true>;
     'job-runs': JobRunsSelect<false> | JobRunsSelect<true>;
+    'rate-limits': RateLimitsSelect<false> | RateLimitsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -411,6 +413,18 @@ export interface JobRun {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rate-limits".
+ */
+export interface RateLimit {
+  id: number;
+  key: string;
+  count: number;
+  windowStart: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -492,6 +506,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'job-runs';
         value: number | JobRun;
+      } | null)
+    | ({
+        relationTo: 'rate-limits';
+        value: number | RateLimit;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -755,6 +773,17 @@ export interface WebhookInboxSelect<T extends boolean = true> {
 export interface JobRunsSelect<T extends boolean = true> {
   name?: T;
   lastSuccessAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rate-limits_select".
+ */
+export interface RateLimitsSelect<T extends boolean = true> {
+  key?: T;
+  count?: T;
+  windowStart?: T;
   updatedAt?: T;
   createdAt?: T;
 }

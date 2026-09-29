@@ -17,6 +17,7 @@ import { Prayer } from './collections/Prayer'
 import { ContactMessage } from './collections/ContactMessage'
 import { WebhookInbox } from './collections/WebhookInbox'
 import { JobRun } from './collections/JobRun'
+import { RateLimit } from './collections/RateLimit'
 import { SiteSettings } from './globals/SiteSettings'
 
 if (process.env.NODE_ENV === 'production' && !process.env.PAYLOAD_SECRET) {
@@ -57,6 +58,7 @@ export default buildConfig({
     ContactMessage,
     WebhookInbox,
     JobRun,
+    RateLimit,
   ],
   globals: [SiteSettings],
 })
