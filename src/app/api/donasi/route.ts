@@ -1,60 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createSnapToken, validateDonationForm } from '@/lib/midtrans'
-import { DonationFormData, DonationCampaign } from '@/types/donation'
-import { donationCampaignsData } from '@/app/(site)/donasi/components/data'
-import { PAYMENT_ENABLED } from '@/lib/store/donations'
+import { NextResponse } from 'next/server'
 
-export async function POST(request: NextRequest) {
-  if (!PAYMENT_ENABLED) {
-    return NextResponse.json(
-      { success: false, error: 'Donasi online belum tersedia' },
-      { status: 501 }
-    )
-  }
+export const dynamic = 'force-dynamic'
 
-  try {
-    const body = await request.json()
-    const { campaignSlug, ...donationData } = body as {
-      campaignSlug: string
-    } & DonationFormData
-
-    // Find the campaign
-    const campaign = donationCampaignsData.find(c => c.slug === campaignSlug)
-    if (!campaign) {
-      return NextResponse.json(
-        { success: false, error: 'Kampanye tidak ditemukan' },
-        { status: 404 }
-      )
-    }
-
-    // Validate form data server-side
-    const validation = validateDonationForm(donationData as DonationFormData)
-    if (!validation.valid) {
-      return NextResponse.json(
-        { success: false, error: 'Data tidak valid', errors: validation.errors },
-        { status: 400 }
-      )
-    }
-
-    // Create Snap token
-    const result = await createSnapToken(donationData as DonationFormData, campaign)
-
-    if (!result.success) {
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({
-      success: true,
-      token: result.token,
-    })
-  } catch (error) {
-    console.error('Error creating donation:', error)
-    return NextResponse.json(
-      { success: false, error: 'Terjadi kesalahan sistem' },
-      { status: 500 }
-    )
-  }
+/**
+ * Legacy donation endpoint. Online payment is on hold (PaymentsProvider =
+ * manual); the supported path is the `submitDonation` Server Action. This
+ * route stays as an explicit 501 so no caller silently bypasses that path
+ * (it previously used hardcoded campaign data and a direct Midtrans SDK call).
+ */
+export async function POST() {
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Donasi online belum tersedia. Gunakan formulir donasi atau hubungi pengurus via WhatsApp.',
+    },
+    { status: 501 },
+  )
 }
