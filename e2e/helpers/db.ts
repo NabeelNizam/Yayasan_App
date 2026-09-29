@@ -68,3 +68,12 @@ export async function cleanupTaggedRows(tag: string): Promise<void> {
   await db().query(`delete from donors where name like $1`, [`%${tag}%`])
   await db().query(`delete from rate_limits where key like $1`, [`%${tag}%`])
 }
+
+/**
+ * Clear the feedback rate-limit buckets so a rate-limit test starts from a
+ * known state. Without this, one run's leftover counts make the next run's
+ * cap assertions non-deterministic.
+ */
+export async function resetFeedbackBuckets(): Promise<void> {
+  await db().query(`delete from rate_limits where key like 'submit-feedback%'`)
+}

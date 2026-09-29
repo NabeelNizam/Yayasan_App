@@ -34,7 +34,9 @@ export default function FeedbackForm() {
     setIsSubmitting(false)
 
     if (!result.ok) {
-      setError('Kritik & saran gagal dikirim. Periksa rating dan pesan Anda.')
+      const serverMessage =
+        result.errors.message?.[0] ?? Object.values(result.errors).flat().filter(Boolean)[0]
+      setError(serverMessage ?? 'Kritik & saran gagal dikirim. Periksa rating dan pesan Anda.')
       return
     }
 
