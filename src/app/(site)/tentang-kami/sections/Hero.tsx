@@ -5,7 +5,7 @@ export default function Hero() {
         <section className="relative w-full h-[400px]">
 
             <Image
-                src="/images/tentang-kami.svg"
+                src="/images/tentang-kami.webp"
                 alt=""
                 fill
                 priority

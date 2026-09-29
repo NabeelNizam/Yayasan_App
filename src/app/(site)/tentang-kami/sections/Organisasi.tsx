@@ -15,7 +15,7 @@ export default function LembagaOrganisasi() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 place-items-center">
           <div className="flex flex-col items-center bg-white p-6 rounded-xl shadow-xl text-black w-full max-w-72 border border-gray-200 space-y-3 transition duration-300 hover:scale-105">
             <Image
-              src="/images/fotbar.svg"
+              src="/images/fotbar.webp"
               alt="Takmir Masjid"
               width={128}
               height={128}
