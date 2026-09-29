@@ -11,7 +11,14 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/features/**', 'src/access/**', 'src/lib/**'],
-      exclude: ['**/*.d.ts'],
+      exclude: [
+        '**/*.d.ts',
+        // Legacy Midtrans SDK (payment on hold; superseded by the PaymentProvider
+        // seam). Dead until a gateway is chosen - not part of the current backend.
+        'src/lib/midtrans.ts',
+        // Single PAYMENT_ENABLED constant, no logic to test.
+        'src/lib/store/donations.ts',
+      ],
       thresholds: {
         statements: 80,
         branches: 80,
