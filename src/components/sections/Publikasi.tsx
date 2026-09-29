@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Card from "../sections/Card"
 
 export default function Publikasi() {
@@ -21,7 +22,7 @@ export default function Publikasi() {
                       shadow-md transition-all duration-300 ease-out
                       hover:bg-green-800 hover:shadow-xl hover:scale-105">
                 Lihat Lebih Banyak
-                <img src="images/tentangKami/Right circle.svg" alt="" className="h-8 w-auto"/>
+                <Image src="/images/tentangKami/Right circle.svg" alt="" width={32} height={32} className="h-8 w-auto"/>
             </a>
         </section>
     )

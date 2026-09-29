@@ -8,7 +8,9 @@ const eslintConfig = [
       "node_modules/**",
       "dist/**",
       "build/**",
+      "coverage/**",
       ".flowbite-react/**",
+      "payload-types.ts",
     ],
   },
 ];

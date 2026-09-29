@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 export default function Profil() {
   return (
     <div className="flex flex-col gap-6">
@@ -6,10 +8,12 @@ export default function Profil() {
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
           {/* Placeholder for the group photo */}
           <div className="absolute inset-0 bg-gray-200">
-            <img 
+            <Image 
               src="/images/kegiatan/icon/organisasi.svg" 
               alt="Profil TK"
-              className="w-full h-full object-cover"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
             />
           </div>
         </div>

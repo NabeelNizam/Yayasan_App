@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef } from "react"
+import Image from "next/image"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons"
 
@@ -56,12 +57,14 @@ export default function Dokumentasi() {
           {images.map((src, index) => (
             <div 
               key={index} 
-              className="min-w-[280px] sm:min-w-[300px] md:min-w-[320px] aspect-[4/3] rounded-xl overflow-hidden snap-center flex-shrink-0 bg-gray-200"
+              className="relative min-w-[280px] sm:min-w-[300px] md:min-w-[320px] aspect-[4/3] rounded-xl overflow-hidden snap-center flex-shrink-0 bg-gray-200"
             >
-              <img 
+              <Image 
                 src={src} 
                 alt={`Dokumentasi ${index + 1}`}
-                className="w-full h-full object-cover"
+                fill
+                sizes="320px"
+                className="object-cover"
               />
             </div>
           ))}

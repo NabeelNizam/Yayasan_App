@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 
 export type CardStackItem = {
@@ -198,11 +199,13 @@ function HeroCardStack<T extends CardStackItem>({
                   <div className="h-full w-full">
                     <div className="relative h-full w-full">
                       {item.imageSrc ? (
-                        <img
+                        <Image
                           src={item.imageSrc}
                           alt={item.title}
-                          className="h-full w-full object-cover"
+                          fill
+                          sizes="(max-width: 768px) 330px, 735px"
                           draggable={false}
+                          className="object-cover"
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center bg-gray-200 text-sm text-gray-500">

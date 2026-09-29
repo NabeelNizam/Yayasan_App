@@ -1,15 +1,19 @@
 "use client"
 
+import Image from "next/image"
+
 export default function DonasiCard() {
     return (
         <div className="flex w-[300px] flex-col overflow-hidden rounded-lg shadow-2xl">
 
             {/* Gambar */}
-            <div className="h-2/3">
-                <img
+            <div className="relative h-48 w-full">
+                <Image
                     src="/images/publikasi/publikasi1.png"
                     alt="Donasi"
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="300px"
+                    className="object-cover"
                 />
             </div>
 

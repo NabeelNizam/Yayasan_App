@@ -1,18 +1,25 @@
+import Image from "next/image"
+
 export default function TentangKami() {
     return (
         <section className="relative overflow-hidden min-h-screen flex items-center justify-center">
-            <img
+            <Image
                 src="/images/tentangKami/masjid.svg"
                 alt="Ilustrasi masjid"
-                className="absolute inset-0 w-full h-full object-cover z-0"
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover z-0"
             />
             <div className="absolute inset-0 bg-white/70 z-0"></div>
 
             <div className="relative z-10 flex flex-col items-center justify-center px-6 text-center max-w-4xl">
 
-                <img
+                <Image
                     src="/images/tentangKami/logo.svg"
                     alt="Logo Masjid Al-Muhajirin"
+                    width={320}
+                    height={128}
                     className="w-full max-w-xs h-32 pb-4"
                 />
 
@@ -39,9 +46,11 @@ export default function TentangKami() {
                         className="w-56 h-14 flex items-center justify-center gap-x-3 bg-[#0B7932] text-white rounded border border-[#0B7932] font-bold shadow transition hover:bg-green-800 hover:shadow-lg"
                     >
                         Tentang Kami
-                        <img
+                        <Image
                             src="/images/tentangKami/Right circle.svg"
                             alt="Ikon panah"
+                            width={24}
+                            height={24}
                             className="h-6 w-auto"
                         />
                     </a>

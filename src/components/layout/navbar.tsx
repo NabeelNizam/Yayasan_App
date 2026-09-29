@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -33,10 +34,13 @@ export default function Navbar() {
         {/* Logo Section */}
         <div className="flex cursor-default items-center gap-4 lg:pl-10">
           <Link href="/" className="flex items-center gap-2 sm:gap-4">
-            <img
+            <Image
               className="h-10 w-auto sm:h-12"
               src="/logo.svg"
               alt="logo yayasan"
+              width={120}
+              height={48}
+              priority
             />
             <div className="leading-tight uppercase hidden sm:block">
               <p className="text-sm font-bold text-[#0B7932] sm:text-base">Masjid Al - Muhajirin</p>

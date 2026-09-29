@@ -2,6 +2,7 @@
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faArrowRight } from "@fortawesome/free-solid-svg-icons"
+import Image from "next/image"
 import Link from "next/link"
 
 interface InstitutionCard {
@@ -70,9 +71,11 @@ function InstitutionProfileCard({ card }: { card: InstitutionCard }) {
 
       {/* Large Illustration */}
       <div className="mb-10 flex h-40 w-full items-center justify-center">
-        <img
+        <Image
           src={card.logoImage}
           alt={`Ilustrasi ${card.title}`}
+          width={320}
+          height={160}
           className="h-full w-full object-contain"
         />
       </div>

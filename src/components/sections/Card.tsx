@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faMagnifyingGlassPlus, faXmark } from "@fortawesome/free-solid-svg-icons"
 
@@ -12,9 +13,11 @@ export default function Card() {
       <div className="max-w-[320px] overflow-hidden bg-white shadow-lg rounded-lg overflow-hidden transition-all duration-300 ease-out
                       hover:shadow-xl hover:scale-105">
         <div className="group relative overflow-hidden">
-          <img
+          <Image
             src="/images/publikasi/publikasi1.png"
             alt="Kajian Madani"
+            width={320}
+            height={220}
             className="h-[220px] w-full object-cover"
           />
 
@@ -55,9 +58,11 @@ export default function Card() {
               <FontAwesomeIcon icon={faXmark} className="text-xl" />
             </button>
 
-            <img
+            <Image
               src="/images/publikasi/publikasi1.png"
               alt="Preview Kajian Madani"
+              width={1024}
+              height={768}
               className="max-h-[90vh] w-auto rounded-lg object-contain shadow-2xl"
             />
           </div>
